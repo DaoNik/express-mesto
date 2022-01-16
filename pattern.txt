@@ -1,0 +1,5 @@
+curl -X POST -H 'Content-Type: application/json' -d '{"name": "dvorf", "about": "Big dvorf", "avatar": "logo"}' 'http://localhost:3000/users'
+
+curl 'http://localhost:3000/users/61e42e27fc502e961336a5a3'
+
+curl 'http://localhost:3000/users'
