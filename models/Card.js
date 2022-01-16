@@ -16,7 +16,7 @@ const cardSchema = new Schema({
     required: true,
   },
   likes: {
-    type: Array.ObjectId,
+    type: [Types.ObjectId],
     default: [],
   },
   createdAt: {
