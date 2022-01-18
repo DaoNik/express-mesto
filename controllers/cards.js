@@ -7,7 +7,9 @@ const getCards = (req, res) => {
       res.status(200).send(cards);
     })
     .catch((err) => {
-      res.status(500).send({ message: `Произошла ошибка ${err.message}` });
+      res
+        .status(500)
+        .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
     });
 };
 
@@ -19,19 +21,85 @@ const createCard = (req, res) => {
       res.status(201).send(card);
     })
     .catch((err) => {
-      res.status(500).send({ message: `Произошла ошибка ${err.message}` });
+      if (err.name === 'ValidationError') {
+        res
+          .status(400)
+          .send({ message: 'Неверно введены данные для карточки' });
+      }
+      res
+        .status(500)
+        .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
     });
 };
 
 const deleteCard = (req, res) => {
   const { id } = req.params;
-  return Card.findById(id)
+
+  return Card.findByIdAndDelete(id)
     .then((card) => {
       res.status(200).send(card);
     })
     .catch((err) => {
-      res.status(500).send({ message: `Произошла ошибка ${err.message}` });
+      if (err.name === 'CastError') {
+        res.status(404).send({ message: 'Неверный идентификатор карточки' });
+      }
+      res
+        .status(500)
+        .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
     });
 };
 
-module.exports = { getCards, createCard, deleteCard };
+const addLike = (req, res) => {
+  console.log(req.user._id, req.params.id);
+  return Card.findByIdAndUpdate(
+    req.params.id,
+    { $addToSet: { likes: req.user._id } }, // добавить _id в массив, если его там нет
+    // eslint-disable-next-line comma-dangle
+    { new: true }
+  )
+    .then((card) => {
+      res.status(200).send(card);
+    })
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        res.status(404).send({
+          message:
+            'Неверный идентификатор карточки или вы уже поставили ей лайк',
+        });
+      }
+      res
+        .status(500)
+        .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
+    });
+};
+
+const deleteLike = (req, res) => {
+  console.log(req.user._id, req.params.id);
+  Card.findByIdAndUpdate(
+    req.params.id,
+    { $pull: { likes: req.user._id } }, // убрать _id из массива
+    // eslint-disable-next-line comma-dangle
+    { new: true }
+  )
+    .then((card) => {
+      res.status(200).send(card);
+    })
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        res.status(404).send({
+          message: 'Неверный идентификатор карточки или вы уже убрали лайк',
+        });
+      }
+      res
+        .status(500)
+        .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
+    });
+};
+
+module.exports = {
+  getCards,
+  createCard,
+  deleteCard,
+  addLike,
+  deleteLike,
+};

@@ -7,7 +7,9 @@ const getUsers = (req, res) => {
       res.status(200).send(users);
     })
     .catch((err) => {
-      res.status(500).send({ message: `Произошла ошибка ${err.message}` });
+      res
+        .status(500)
+        .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
     });
 };
 
@@ -18,20 +20,83 @@ const getUser = (req, res) => {
       res.status(200).send(user);
     })
     .catch((err) => {
-      res.status(500).send({ message: `Произошла ошибка ${err.message}` });
+      if (err.name === 'CastError') {
+        res
+          .status(404)
+          .send({ message: 'Неверный идентификатор пользователя' });
+      }
+      res
+        .status(500)
+        .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
     });
 };
 
+// eslint-disable-next-line arrow-body-style
 const createUser = (req, res) => {
-  console.log(req.body);
-
   return User.create({ ...req.body })
     .then((user) => {
       res.status(201).send(user);
     })
     .catch((err) => {
-      res.status(500).send({ message: `Произошла ошибка ${err.message}` });
+      if (err.name === 'ValidationError') {
+        res
+          .status(400)
+          .send({ message: 'Неверно введены данные для пользователя' });
+      }
+      res
+        .status(500)
+        .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
     });
 };
 
-module.exports = { getUsers, getUser, createUser };
+const updateUser = (req, res) => {
+  const { name, about } = req.body;
+  return User.findByIdAndUpdate(req.user._id, { name, about })
+    .then((user) => {
+      res.status(200).send(user);
+    })
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        res
+          .status(400)
+          .send({ message: 'Неверно введены данные для пользователя' });
+      }
+      if (err.name === 'CastError') {
+        res
+          .status(404)
+          .send({ message: 'Неверный идентификатор пользователя' });
+      }
+      res
+        .status(500)
+        .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
+    });
+};
+
+const updateAvatar = (req, res) => {
+  const { avatar } = req.body;
+  return User.findByIdAndUpdate(req.user._id, { avatar })
+    .then((newAvatar) => {
+      res.status(200).send(newAvatar);
+    })
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        res.status(400).send({ message: 'Неверно введены данные для аватара' });
+      }
+      if (err.name === 'CastError') {
+        res
+          .status(404)
+          .send({ message: 'Неверный идентификатор пользователя' });
+      }
+      res
+        .status(500)
+        .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
+    });
+};
+
+module.exports = {
+  getUsers,
+  getUser,
+  createUser,
+  updateUser,
+  updateAvatar,
+};
