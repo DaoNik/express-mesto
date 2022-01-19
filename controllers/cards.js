@@ -22,11 +22,11 @@ const createCard = (req, res) => {
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res
+        return res
           .status(400)
           .send({ message: 'Неверно введены данные для карточки' });
       }
-      res
+      return res
         .status(500)
         .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
     });
@@ -37,13 +37,20 @@ const deleteCard = (req, res) => {
 
   return Card.findByIdAndDelete(id)
     .then((card) => {
-      res.status(200).send(card);
+      if (!card) {
+        return res
+          .status(404)
+          .send({ message: 'Такой карточки не существует' });
+      }
+      return res.status(200).send(card);
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(404).send({ message: 'Неверный идентификатор карточки' });
+        return res
+          .status(400)
+          .send({ message: 'Неверный идентификатор карточки' });
       }
-      res
+      return res
         .status(500)
         .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
     });
@@ -58,16 +65,21 @@ const addLike = (req, res) => {
     { new: true }
   )
     .then((card) => {
-      res.status(200).send(card);
+      if (!card) {
+        return res.status(404).send({
+          message: 'Такой карточки не существует или вы уже поставили ей лайк',
+        });
+      }
+      return res.status(200).send(card);
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(404).send({
+        return res.status(404).send({
           message:
             'Неверный идентификатор карточки или вы уже поставили ей лайк',
         });
       }
-      res
+      return res
         .status(500)
         .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
     });
@@ -82,7 +94,14 @@ const deleteLike = (req, res) => {
     { new: true }
   )
     .then((card) => {
-      res.status(200).send(card);
+      if (!card) {
+        return res
+          .status(404)
+          .send({
+            message: 'Такой карточки не существует или вы уже убрали лайк',
+          });
+      }
+      return res.status(200).send(card);
     })
     .catch((err) => {
       if (err.name === 'CastError') {

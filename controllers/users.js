@@ -17,17 +17,23 @@ const getUser = (req, res) => {
   const { id } = req.params;
   return User.findById(id)
     .then((user) => {
-      res.status(200).send(user);
+      if (!user) {
+        return res
+          .status(404)
+          .send({ message: 'Неверный идентификатор пользователя' });
+      }
+      return res.status(200).send(user);
     })
     .catch((err) => {
       if (err.name === 'CastError') {
         res
           .status(404)
           .send({ message: 'Неверный идентификатор пользователя' });
+      } else {
+        res
+          .status(500)
+          .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
       }
-      res
-        .status(500)
-        .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
     });
 };
 
@@ -35,15 +41,20 @@ const getUser = (req, res) => {
 const createUser = (req, res) => {
   return User.create({ ...req.body })
     .then((user) => {
-      res.status(201).send(user);
+      if (!user) {
+        return res
+          .status(404)
+          .send({ message: 'Неверный идентификатор пользователя' });
+      }
+      return res.status(201).send(user);
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res
+        return res
           .status(400)
           .send({ message: 'Неверно введены данные для пользователя' });
       }
-      res
+      return res
         .status(500)
         .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
     });
@@ -51,45 +62,55 @@ const createUser = (req, res) => {
 
 const updateUser = (req, res) => {
   const { name, about } = req.body;
-  return User.findByIdAndUpdate(req.user._id, { name, about })
+  return User.findByIdAndUpdate(req.user._id, { name, about }, { new: true })
     .then((user) => {
-      res.status(200).send(user);
+      if (!user) {
+        return res
+          .status(404)
+          .send({ message: 'Неверный идентификатор пользователя' });
+      }
+      return res.status(200).send(user);
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
         res
           .status(400)
           .send({ message: 'Неверно введены данные для пользователя' });
-      }
-      if (err.name === 'CastError') {
+      } else if (err.name === 'CastError') {
         res
           .status(404)
           .send({ message: 'Неверный идентификатор пользователя' });
+      } else {
+        res
+          .status(500)
+          .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
       }
-      res
-        .status(500)
-        .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
     });
 };
 
 const updateAvatar = (req, res) => {
   const { avatar } = req.body;
-  return User.findByIdAndUpdate(req.user._id, { avatar })
-    .then((newAvatar) => {
-      res.status(200).send(newAvatar);
+  return User.findByIdAndUpdate(req.user._id, { avatar }, { new: true })
+    .then((user) => {
+      if (!user) {
+        return res
+          .status(404)
+          .send({ message: 'Неверный идентификатор пользователя' });
+      }
+      return res.status(200).send(user);
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
         res.status(400).send({ message: 'Неверно введены данные для аватара' });
-      }
-      if (err.name === 'CastError') {
+      } else if (err.name === 'CastError') {
         res
           .status(404)
           .send({ message: 'Неверный идентификатор пользователя' });
+      } else {
+        res
+          .status(500)
+          .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
       }
-      res
-        .status(500)
-        .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
     });
 };
 
