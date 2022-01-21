@@ -27,7 +27,7 @@ const getUser = (req, res) => {
     .catch((err) => {
       if (err.name === 'CastError') {
         res
-          .status(404)
+          .status(400)
           .send({ message: 'Неверный идентификатор пользователя' });
       } else {
         res
@@ -62,7 +62,12 @@ const createUser = (req, res) => {
 
 const updateUser = (req, res) => {
   const { name, about } = req.body;
-  return User.findByIdAndUpdate(req.user._id, { name, about }, { new: true })
+  return User.findByIdAndUpdate(
+    req.user._id,
+    { name, about },
+    // eslint-disable-next-line comma-dangle
+    { new: true, runValidators: true }
+  )
     .then((user) => {
       if (!user) {
         return res
@@ -78,7 +83,7 @@ const updateUser = (req, res) => {
           .send({ message: 'Неверно введены данные для пользователя' });
       } else if (err.name === 'CastError') {
         res
-          .status(404)
+          .status(400)
           .send({ message: 'Неверный идентификатор пользователя' });
       } else {
         res
@@ -90,7 +95,12 @@ const updateUser = (req, res) => {
 
 const updateAvatar = (req, res) => {
   const { avatar } = req.body;
-  return User.findByIdAndUpdate(req.user._id, { avatar }, { new: true })
+  return User.findByIdAndUpdate(
+    req.user._id,
+    { avatar },
+    // eslint-disable-next-line comma-dangle
+    { new: true, runValidators: true }
+  )
     .then((user) => {
       if (!user) {
         return res
@@ -104,7 +114,7 @@ const updateAvatar = (req, res) => {
         res.status(400).send({ message: 'Неверно введены данные для аватара' });
       } else if (err.name === 'CastError') {
         res
-          .status(404)
+          .status(400)
           .send({ message: 'Неверный идентификатор пользователя' });
       } else {
         res
