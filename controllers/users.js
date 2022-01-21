@@ -41,12 +41,7 @@ const getUser = (req, res) => {
 const createUser = (req, res) => {
   return User.create({ ...req.body })
     .then((user) => {
-      if (!user) {
-        return res
-          .status(404)
-          .send({ message: 'Неверный идентификатор пользователя' });
-      }
-      return res.status(201).send(user);
+      res.status(201).send(user);
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {

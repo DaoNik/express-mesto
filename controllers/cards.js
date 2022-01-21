@@ -62,7 +62,7 @@ const addLike = (req, res) => {
     req.params.id,
     { $addToSet: { likes: req.user._id } }, // добавить _id в массив, если его там нет
     // eslint-disable-next-line comma-dangle
-    { new: true, runValidators: true }
+    { new: true }
   )
     .then((card) => {
       if (!card) {
@@ -91,7 +91,7 @@ const deleteLike = (req, res) => {
     req.params.id,
     { $pull: { likes: req.user._id } }, // убрать _id из массива
     // eslint-disable-next-line comma-dangle
-    { new: true, runValidators: true }
+    { new: true }
   )
     .then((card) => {
       if (!card) {
