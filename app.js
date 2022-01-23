@@ -9,14 +9,6 @@ const { PORT = 3000 } = process.env;
 const app = express();
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json());
-app.use((req, res, next) => {
-  req.user = {
-    _id: '61e444c6f9328d9413f808bc',
-    // вставьте сюда _id созданного в предыдущем пункте пользователя
-  };
-
-  next();
-});
 app.use(routes);
 
 async function start() {

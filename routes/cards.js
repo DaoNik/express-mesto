@@ -6,16 +6,17 @@ const {
   addLike,
   deleteLike,
 } = require('../controllers/cards');
+const auth = require('../middleware/auth');
 
 // /cards
-router.get('/', getCards);
+router.get('/', auth, getCards);
 
-router.post('/', createCard);
+router.post('/', auth, createCard);
 
-router.delete('/:id', deleteCard);
+router.delete('/:id', auth, deleteCard);
 
-router.put('/:id/likes', addLike);
+router.put('/:id/likes', auth, addLike);
 
-router.delete('/:id/likes', deleteLike);
+router.delete('/:id/likes', auth, deleteLike);
 
 module.exports = router;
