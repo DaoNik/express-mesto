@@ -1,20 +1,17 @@
 const Card = require('../models/Card');
 const NotFoundError = require('../errors/NotFoundError');
+const ValidationError = require('../errors/ValidationError');
 
 // eslint-disable-next-line arrow-body-style
-const getCards = (req, res) => {
+const getCards = (req, res, next) => {
   return Card.find({})
     .then((cards) => {
       res.status(200).send(cards);
     })
-    .catch((err) => {
-      res
-        .status(500)
-        .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
-    });
+    .catch(next);
 };
 
-const createCard = (req, res) => {
+const createCard = (req, res, next) => {
   console.log(req.body, req.user);
 
   return Card.create({ ...req.body, owner: req.user._id })
@@ -23,17 +20,13 @@ const createCard = (req, res) => {
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        return res
-          .status(400)
-          .send({ message: 'Неверно введены данные для карточки' });
+        next(new ValidationError('Неверно введены данные для карточки'));
       }
-      return res
-        .status(500)
-        .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
+      next(err);
     });
 };
 
-const deleteCard = (req, res) => {
+const deleteCard = (req, res, next) => {
   const { id } = req.params;
 
   return Card.findById(id)
@@ -42,9 +35,7 @@ const deleteCard = (req, res) => {
       if (!card) {
         throw new NotFoundError('Нет карточки с таким id');
       } else if (cardOwnerId !== req.user._id) {
-        return Promise.reject(
-          new Error({ message: 'Вы не можете удалить эту карточку' })
-        );
+        throw new Error('Вы не можете удалить эту карточку');
       }
       return card;
     })
@@ -52,17 +43,13 @@ const deleteCard = (req, res) => {
     .then((card) => res.status(200).send(card))
     .catch((err) => {
       if (err.name === 'CastError') {
-        return res
-          .status(400)
-          .send({ message: 'Неверный идентификатор карточки' });
+        next(new ValidationError('Неверный идентификатор карточки'));
       }
-      return res
-        .status(500)
-        .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
+      next(err);
     });
 };
 
-const addLike = (req, res) => {
+const addLike = (req, res, next) => {
   console.log(req.user._id, req.params.id);
   return Card.findByIdAndUpdate(
     req.params.id,
@@ -73,6 +60,7 @@ const addLike = (req, res) => {
     .then((card) => {
       if (!card) {
         throw new NotFoundError(
+          // eslint-disable-next-line comma-dangle
           'Нет карточки с таким id или вы уже поставили ей лайк'
         );
       }
@@ -80,18 +68,19 @@ const addLike = (req, res) => {
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        return res.status(400).send({
-          message:
-            'Неверный идентификатор карточки или вы уже поставили ей лайк',
-        });
+        next(
+          new ValidationError(
+            // eslint-disable-next-line comma-dangle
+            'Неверный идентификатор карточки или вы уже поставили ей лайк'
+            // eslint-disable-next-line comma-dangle
+          )
+        );
       }
-      return res
-        .status(500)
-        .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
+      next(err);
     });
 };
 
-const deleteLike = (req, res) => {
+const deleteLike = (req, res, next) => {
   console.log(req.user._id, req.params.id);
   Card.findByIdAndUpdate(
     req.params.id,
@@ -110,13 +99,15 @@ const deleteLike = (req, res) => {
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(400).send({
-          message: 'Неверный идентификатор карточки или вы уже убрали лайк',
-        });
+        next(
+          new ValidationError(
+            // eslint-disable-next-line comma-dangle
+            'Неверный идентификатор карточки или вы уже убрали лайк'
+            // eslint-disable-next-line comma-dangle
+          )
+        );
       }
-      res
-        .status(500)
-        .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
+      next(err);
     });
 };
 

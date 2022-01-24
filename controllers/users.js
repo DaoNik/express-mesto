@@ -2,34 +2,32 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const NotFoundError = require('../errors/NotFoundError');
+const ValidationError = require('../errors/ValidationError');
+const AuthorizationError = require('../errors/AuthorizationError');
 // const validator = require('validator');
 
 // eslint-disable-next-line arrow-body-style
-const getUsers = (req, res) => {
+const getUsers = (req, res, next) => {
   return User.find({})
     .then((users) => {
       res.status(200).send(users);
     })
-    .catch((err) => {
-      res
-        .status(500)
-        .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
-    });
+    .catch(next);
 };
 
-const login = (req, res) => {
+const login = (req, res, next) => {
   const { email, password } = req.body;
 
   return User.findOne({ email })
     .select(+password)
     .then((user) => {
       if (!user) {
-        return Promise.reject(new Error('Неправильные почта или пароль'));
+        throw new AuthorizationError('Неправильные почта или пароль');
       }
 
       return bcrypt.compare(password, user.password).then((matched) => {
         if (!matched) {
-          return Promise.reject(new Error('Неправильные почта или пароль'));
+          throw new AuthorizationError('Неправильные почта или пароль');
         }
 
         const token = jwt.sign({ _id: user._id }, 'super-secret', {
@@ -38,12 +36,10 @@ const login = (req, res) => {
         return res.status(200).send({ token });
       });
     })
-    .catch((err) => {
-      res.status(401).send({ message: err.message });
-    });
+    .catch(next);
 };
 
-const getUser = (req, res) => {
+const getUser = (req, res, next) => {
   const { id } = req.params;
   return User.findById(id)
     .then((user) => {
@@ -54,18 +50,14 @@ const getUser = (req, res) => {
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res
-          .status(400)
-          .send({ message: 'Неверный идентификатор пользователя' });
+        next(new ValidationError('Неверный идентификатор пользователя'));
       } else {
-        res
-          .status(500)
-          .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
+        next(err);
       }
     });
 };
 
-const getCurrentUser = (req, res) => {
+const getCurrentUser = (req, res, next) => {
   User.findById(req.user._id)
     .then((user) => {
       if (!user) {
@@ -75,28 +67,22 @@ const getCurrentUser = (req, res) => {
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res
-          .status(400)
-          .send({ message: 'Неверно введены данные для пользователя' });
+        next(new ValidationError('Неверно введены данные для пользователя'));
       } else if (err.name === 'CastError') {
-        res
-          .status(400)
-          .send({ message: 'Неверный идентификатор пользователя' });
+        next(new ValidationError('Неверный идентификатор пользователя'));
       } else {
-        res
-          .status(500)
-          .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
+        next(err);
       }
     });
 };
 
 // eslint-disable-next-line arrow-body-style
-const createUser = (req, res) => {
+const createUser = (req, res, next) => {
   const { email, password, ...body } = req.body;
   bcrypt
     .hash(password, 10)
+    // eslint-disable-next-line arrow-body-style
     .then((hash) => {
-      console.log(hash);
       return User.create({
         email,
         password: hash, // записываем хеш в базу
@@ -108,17 +94,18 @@ const createUser = (req, res) => {
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        return res
-          .status(400)
-          .send({ message: 'Неверно введены данные для пользователя' });
+        next(new ValidationError('Неверно введены данные для пользователя'));
+      } else if (err.name === 'MongoError' && err.code === 11000) {
+        const error = new Error('Данный пользователь уже зарегистрирован');
+        error.statusCode = 409;
+
+        next(error);
       }
-      return res
-        .status(500)
-        .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
+      next(err);
     });
 };
 
-const updateUser = (req, res) => {
+const updateUser = (req, res, next) => {
   const { name, about } = req.body;
   return User.findByIdAndUpdate(
     req.user._id,
@@ -134,22 +121,16 @@ const updateUser = (req, res) => {
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res
-          .status(400)
-          .send({ message: 'Неверно введены данные для пользователя' });
+        next(new ValidationError('Неверно введены данные для пользователя'));
       } else if (err.name === 'CastError') {
-        res
-          .status(400)
-          .send({ message: 'Неверный идентификатор пользователя' });
+        next(new ValidationError('Неверный идентификатор пользователя'));
       } else {
-        res
-          .status(500)
-          .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
+        next(err);
       }
     });
 };
 
-const updateAvatar = (req, res) => {
+const updateAvatar = (req, res, next) => {
   const { avatar } = req.body;
   return User.findByIdAndUpdate(
     req.user._id,
@@ -165,15 +146,11 @@ const updateAvatar = (req, res) => {
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(400).send({ message: 'Неверно введены данные для аватара' });
+        next(new ValidationError('Неверно введены данные для аватара'));
       } else if (err.name === 'CastError') {
-        res
-          .status(400)
-          .send({ message: 'Неверный идентификатор пользователя' });
+        next(new ValidationError('Неверный идентификатор пользователя'));
       } else {
-        res
-          .status(500)
-          .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
+        next(err);
       }
     });
 };
