@@ -2,7 +2,7 @@ const router = require('express').Router();
 const {
   getUsers,
   getUser,
-  // getCurrentUser,
+  getCurrentUser,
   createUser,
   updateUser,
   updateAvatar,
@@ -13,9 +13,9 @@ const auth = require('../middleware/auth');
 // /users
 router.get('/', auth, getUsers);
 
-router.get('/:id', auth, getUser);
+router.get('/me', auth, getCurrentUser);
 
-// router.get('/me', auth, getCurrentUser);
+router.get('/:id', auth, getUser);
 
 router.post('/signin', login);
 

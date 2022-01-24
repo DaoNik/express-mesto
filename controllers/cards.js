@@ -1,4 +1,5 @@
 const Card = require('../models/Card');
+const NotFoundError = require('../errors/NotFoundError');
 
 // eslint-disable-next-line arrow-body-style
 const getCards = (req, res) => {
@@ -16,7 +17,7 @@ const getCards = (req, res) => {
 const createCard = (req, res) => {
   console.log(req.body, req.user);
 
-  return Card.create({ ...req.body, owner: req.user })
+  return Card.create({ ...req.body, owner: req.user._id })
     .then((card) => {
       res.status(201).send(card);
     })
@@ -35,15 +36,20 @@ const createCard = (req, res) => {
 const deleteCard = (req, res) => {
   const { id } = req.params;
 
-  return Card.findByIdAndDelete(id)
+  return Card.findById(id)
     .then((card) => {
+      const cardOwnerId = card.owner.toString();
       if (!card) {
-        return res
-          .status(404)
-          .send({ message: 'Такой карточки не существует' });
+        throw new NotFoundError('Нет карточки с таким id');
+      } else if (cardOwnerId !== req.user._id) {
+        return Promise.reject(
+          new Error({ message: 'Вы не можете удалить эту карточку' })
+        );
       }
-      return res.status(200).send(card);
+      return card;
     })
+    .then(() => Card.findByIdAndDelete(id))
+    .then((card) => res.status(200).send(card))
     .catch((err) => {
       if (err.name === 'CastError') {
         return res
@@ -66,9 +72,9 @@ const addLike = (req, res) => {
   )
     .then((card) => {
       if (!card) {
-        return res.status(404).send({
-          message: 'Такой карточки не существует или вы уже поставили ей лайк',
-        });
+        throw new NotFoundError(
+          'Нет карточки с таким id или вы уже поставили ей лайк'
+        );
       }
       return res.status(200).send(card);
     })
@@ -95,9 +101,10 @@ const deleteLike = (req, res) => {
   )
     .then((card) => {
       if (!card) {
-        return res.status(404).send({
-          message: 'Такой карточки не существует или вы уже убрали лайк',
-        });
+        throw new NotFoundError(
+          // eslint-disable-next-line comma-dangle
+          'Нет карточки с таким id или вы уже убрали лайк'
+        );
       }
       return res.status(200).send(card);
     })

@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const NotFoundError = require('../errors/NotFoundError');
 // const validator = require('validator');
 
 // eslint-disable-next-line arrow-body-style
@@ -20,6 +21,7 @@ const login = (req, res) => {
   const { email, password } = req.body;
 
   return User.findOne({ email })
+    .select(+password)
     .then((user) => {
       if (!user) {
         return Promise.reject(new Error('Неправильные почта или пароль'));
@@ -46,9 +48,7 @@ const getUser = (req, res) => {
   return User.findById(id)
     .then((user) => {
       if (!user) {
-        return res
-          .status(404)
-          .send({ message: 'Неверный идентификатор пользователя' });
+        throw new NotFoundError('Нет пользователя с таким id');
       }
       return res.status(200).send(user);
     })
@@ -64,36 +64,31 @@ const getUser = (req, res) => {
       }
     });
 };
-const getCurrentUser = () => {
-  console.log('Hello');
+
+const getCurrentUser = (req, res) => {
+  User.findById(req.user._id)
+    .then((user) => {
+      if (!user) {
+        throw new NotFoundError('Нет пользователя с таким id');
+      }
+      return res.status(200).send(user);
+    })
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        res
+          .status(400)
+          .send({ message: 'Неверно введены данные для пользователя' });
+      } else if (err.name === 'CastError') {
+        res
+          .status(400)
+          .send({ message: 'Неверный идентификатор пользователя' });
+      } else {
+        res
+          .status(500)
+          .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
+      }
+    });
 };
-// const getCurrentUser = (req, res) => {
-//   console.log(req.user);
-//   // User.findById(req.user._id)
-//   //   .then((user) => {
-//   //     if (!user) {
-//   //       return res
-//   //         .status(404)
-//   //         .send({ message: 'Неверный идентификатор пользователя' });
-//   //     }
-//   //     return res.status(200).send(user);
-//   //   })
-//   //   .catch((err) => {
-//   //     if (err.name === 'ValidationError') {
-//   //       res
-//   //         .status(400)
-//   //         .send({ message: 'Неверно введены данные для пользователя' });
-//   //     } else if (err.name === 'CastError') {
-//   //       res
-//   //         .status(400)
-//   //         .send({ message: 'Неверный идентификатор пользователя' });
-//   //     } else {
-//   //       res
-//   //         .status(500)
-//   //         .send({ message: `Произошла ошибка ${err.name}: ${err.message}` });
-//   //     }
-//   //   });
-// };
 
 // eslint-disable-next-line arrow-body-style
 const createUser = (req, res) => {
@@ -133,9 +128,7 @@ const updateUser = (req, res) => {
   )
     .then((user) => {
       if (!user) {
-        return res
-          .status(404)
-          .send({ message: 'Неверный идентификатор пользователя' });
+        throw new NotFoundError('Нет пользователя с таким id');
       }
       return res.status(200).send(user);
     })
@@ -166,9 +159,7 @@ const updateAvatar = (req, res) => {
   )
     .then((user) => {
       if (!user) {
-        return res
-          .status(404)
-          .send({ message: 'Неверный идентификатор пользователя' });
+        throw new NotFoundError('Нет пользователя с таким id');
       }
       return res.status(200).send(user);
     })
