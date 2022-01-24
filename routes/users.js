@@ -4,47 +4,19 @@ const {
   getUsers,
   getUser,
   getCurrentUser,
-  createUser,
   updateUser,
   updateAvatar,
-  login,
 } = require('../controllers/users');
-const auth = require('../middleware/auth');
 
 // /users
-router.get('/', auth, getUsers);
+router.get('/', getUsers);
 
-router.get('/me', auth, getCurrentUser);
+router.get('/me', getCurrentUser);
 
-router.get('/:id', auth, getUser);
-
-router.post(
-  '/signin',
-  celebrate({
-    body: Joi.object().keys({
-      email: Joi.string().required().email(),
-      password: Joi.string().required(),
-    }),
-  }),
-  // eslint-disable-next-line comma-dangle
-  login
-);
-
-router.post(
-  '/signup',
-  celebrate({
-    body: Joi.object().keys({
-      email: Joi.string().required().email(),
-      password: Joi.string().required(),
-    }),
-  }),
-  // eslint-disable-next-line comma-dangle
-  createUser
-);
+router.get('/:id', getUser);
 
 router.patch(
   '/me',
-  auth,
   celebrate({
     body: Joi.object().keys({
       name: Joi.string().required().min(2).max(30),
@@ -57,7 +29,6 @@ router.patch(
 
 router.patch(
   '/me/avatar',
-  auth,
   celebrate({
     body: Joi.object().keys({
       avatar: Joi.string().required(),

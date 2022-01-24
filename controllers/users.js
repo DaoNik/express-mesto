@@ -4,7 +4,6 @@ const User = require('../models/User');
 const NotFoundError = require('../errors/NotFoundError');
 const ValidationError = require('../errors/ValidationError');
 const AuthorizationError = require('../errors/AuthorizationError');
-// const validator = require('validator');
 
 // eslint-disable-next-line arrow-body-style
 const getUsers = (req, res, next) => {
@@ -19,12 +18,11 @@ const login = (req, res, next) => {
   const { email, password } = req.body;
 
   return User.findOne({ email })
-    .select(+password)
+    .select('+password')
     .then((user) => {
       if (!user) {
         throw new AuthorizationError('Неправильные почта или пароль');
       }
-
       return bcrypt.compare(password, user.password).then((matched) => {
         if (!matched) {
           throw new AuthorizationError('Неправильные почта или пароль');

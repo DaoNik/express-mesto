@@ -35,7 +35,9 @@ const deleteCard = (req, res, next) => {
       if (!card) {
         throw new NotFoundError('Нет карточки с таким id');
       } else if (cardOwnerId !== req.user._id) {
-        throw new Error('Вы не можете удалить эту карточку');
+        const error = new Error('Вы не можете удалить эту карточку');
+        error.statusCode = 403;
+        throw error;
       }
       return card;
     })
