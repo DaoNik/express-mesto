@@ -45,7 +45,7 @@ const deleteCard = (req, res, next) => {
     .then((card) => res.status(200).send(card))
     .catch((err) => {
       if (err.name === 'CastError') {
-        next(new ValidationError('Неверный идентификатор карточки'));
+        next(new NotFoundError('Неверный идентификатор карточки'));
       }
       next(err);
     });

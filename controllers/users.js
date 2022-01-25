@@ -48,7 +48,7 @@ const getUser = (req, res, next) => {
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        next(new ValidationError('Неверный идентификатор пользователя'));
+        next(new NotFoundError('Неверный идентификатор пользователя'));
       } else {
         next(err);
       }
@@ -88,17 +88,20 @@ const createUser = (req, res, next) => {
       });
     })
     .then((user) => {
-      res.send(user);
+      const newUser = user.toObject();
+      delete newUser.password;
+      res.send(newUser);
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
         next(new ValidationError('Неверно введены данные для пользователя'));
-      } else if (err.name === 'MongoError' && err.code === 11000) {
+      } else if (err.name === 'MongoServerError' && err.code === 11000) {
         const error = new Error('Данный пользователь уже зарегистрирован');
         error.statusCode = 409;
 
         next(error);
       }
+
       next(err);
     });
 };
