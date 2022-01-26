@@ -48,6 +48,8 @@ const getUser = (req, res, next) => {
     })
     .catch((err) => {
       if (err.name === 'CastError') {
+        next(new ValidationError('Невалидный id пользователя'));
+      } else if (err.name === 'NotFoundError') {
         next(new NotFoundError('Неверный идентификатор пользователя'));
       } else {
         next(err);
