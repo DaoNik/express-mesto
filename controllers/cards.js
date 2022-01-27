@@ -31,10 +31,11 @@ const deleteCard = (req, res, next) => {
 
   return Card.findById(id)
     .then((card) => {
-      const cardOwnerId = card.owner.toString();
       if (!card) {
         throw new NotFoundError('Нет карточки с таким id');
-      } else if (cardOwnerId !== req.user._id) {
+      }
+      const cardOwnerId = card.owner.toString();
+      if (cardOwnerId !== req.user._id) {
         const error = new Error('Вы не можете удалить эту карточку');
         error.statusCode = 403;
         throw error;
